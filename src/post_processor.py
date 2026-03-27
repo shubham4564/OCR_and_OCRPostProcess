@@ -56,39 +56,107 @@ def _read_csv_rows(path: Path) -> list[dict[str, Any]]:
         reader = csv.DictReader(handle)
         return list(reader)
 
+# Digit→letter confusions: only applied to tokens that are purely alphabetic
+# (no digits) after stripping punctuation — prevents corrupting dates, IDs, amounts.
 LETTER_CONFUSIONS = {
+    "|": "I",
+    # Digit look-alikes are intentionally NOT applied globally here;
+    # see _replace_confusions_in_token for the guarded logic.
+}
+
+# These are only swapped when the token consists ENTIRELY of these characters
+# mixed with real letters (no standalone digit strings).
+_DIGIT_LETTER_MAP = {
     "0": "O",
     "1": "I",
     "5": "S",
     "6": "G",
     "8": "B",
-    "|": "I",
     "$": "S",
 }
+
+
+# Lines that are pure noise: only dashes, underscores, equals, pipes, tildes,
+# or very short (≤2 printable chars after stripping whitespace/punctuation).
+_GARBAGE_LINE_RE = re.compile(r"^[\s\-_=|~\.,'\"\\/*#@!]{0,}$")
+
+
+def _is_garbage_line(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return True  # blank
+    # Pure separator lines: all dashes/underscores/equals etc.
+    if _GARBAGE_LINE_RE.fullmatch(stripped):
+        return True
+    # Lines of only 1 printable non-space character (stray OCR noise)
+    clean = re.sub(r"[\s\-_=|~.,'\"]", "", stripped)
+    if len(clean) <= 1:
+        return True
+    return False
+
+
+def _rejoin_hyphenated_breaks(text: str) -> str:
+    """Merge words split across lines with a trailing hyphen."""
+    # 'word-\nnextword' → 'wordnextword' (common OCR artifact from scanned columns)
+    return re.sub(r"(\w)-\n(\w)", r"\1\2", text)
+
+
+def _strip_leading_noise_char(line: str) -> str:
+    """Remove a single leading stray character that OCR commonly prepends."""
+    # Patterns: leading apostrophe/quote before a word char, lone pipe/dash
+    return re.sub(r"^['\"`|](?=\w)", "", line)
 
 
 def _cleanup_text(text: str) -> str:
     text = text.replace("\t", " ")
     text = re.sub(r"[\r\f\v]+", "\n", text)
-    text = re.sub(r"[ ]{2,}", " ", text)
+    # Rejoin hyphenated line breaks before line-level processing
+    text = _rejoin_hyphenated_breaks(text)
+    lines = text.split("\n")
+    cleaned_lines: list[str] = []
+    for line in lines:
+        if _is_garbage_line(line):
+            continue
+        line = _strip_leading_noise_char(line)
+        line = re.sub(r"[ ]{2,}", " ", line)
+        cleaned_lines.append(line)
+    text = "\n".join(cleaned_lines)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip() + "\n"
 
 
 def _replace_confusions_in_token(token: str) -> str:
-    has_alpha = any(char.isalpha() for char in token)
-    has_digit = any(char.isdigit() for char in token)
-    if not has_alpha and not has_digit:
+    """Apply OCR confusion fixes with conservative guards.
+
+    Strategy:
+    - Always apply LETTER_CONFUSIONS (pipe→I, etc.) regardless of context.
+    - Apply _DIGIT_LETTER_MAP only when the token looks like a word:
+      * Has at least one real letter AND
+      * Is NOT a pure number or a number-heavy token (dates, IDs, amounts).
+      This prevents corrupting "1975", "9/3/90", "$40,921.30", etc.
+    """
+    if not token:
         return token
 
-    if has_alpha and has_digit:
-        return "".join(LETTER_CONFUSIONS.get(char, char) for char in token)
+    # Always fix unambiguous non-digit confusions (| → I)
+    result = "".join(LETTER_CONFUSIONS.get(char, char) for char in token)
 
-    alpha_ratio = sum(1 for char in token if char.isalpha()) / max(len(token), 1)
-    if alpha_ratio >= 0.7:
-        return "".join(LETTER_CONFUSIONS.get(char, char) for char in token)
+    has_alpha = any(char.isalpha() for char in result)
+    has_digit = any(char.isdigit() for char in result)
 
-    return token
+    if not has_alpha:
+        # Pure digit token (or pure symbol): never apply digit→letter map
+        return result
+
+    if has_digit:
+        # Mixed: only substitute if letters clearly dominate (≥70 % alpha chars)
+        alpha_count = sum(1 for c in result if c.isalpha())
+        digit_count = sum(1 for c in result if c.isdigit())
+        if alpha_count / max(alpha_count + digit_count, 1) < 0.7:
+            return result  # Looks more like a number/code → leave it
+
+    # Word-like token: apply digit→letter map
+    return "".join(_DIGIT_LETTER_MAP.get(char, char) for char in result)
 
 
 def _apply_heuristics(text: str) -> str:
@@ -103,9 +171,14 @@ def _apply_heuristics(text: str) -> str:
             normalized.append(piece)
 
     joined = "".join(normalized)
-    joined = re.sub(r"([!?.,;:]){2,}", r"\1", joined)
-    joined = re.sub(r"\s+([!?.,;:])", r"\1", joined)
-    joined = re.sub(r"\n[ ]+", "\n", joined)
+    # Collapse repeated punctuation (e.g. "???", "...") but preserve ellipsis "..."
+    joined = re.sub(r"([!?;]){2,}", r"\1", joined)
+    # Remove spaces before punctuation, but NOT before colons ("To: name" pattern)
+    joined = re.sub(r"\s+([!?,;])", r"\1", joined)
+    # Strip trailing whitespace on each line
+    joined = re.sub(r"[ \t]+$", "", joined, flags=re.MULTILINE)
+    # Strip leading whitespace at start of line (OCR sometimes indents garbage)
+    joined = re.sub(r"\n[ \t]+", "\n", joined)
     return joined.strip() + "\n"
 
 

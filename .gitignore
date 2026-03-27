@@ -1,0 +1,41 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+.env
+.venv/
+env/
+venv/
+
+# ── OCR pipeline outputs (generated, not tracked) ─────────────────────────────
+output/raw_text/
+output/raw_text_baseline/
+output/corrected_text/
+output/ocr_manifest.csv
+output/ocr_comparison_manifest.csv
+output/postprocess_manifest.csv
+output/edit_events.csv
+output/analysis/
+
+# Keep output/ directory itself (for .gitkeep if added later)
+
+# ── Dataset images (large binary files) ───────────────────────────────────────
+data/raw/images/
+
+# Keep data/ directory structure itself
+
+# ── OS / editor noise ─────────────────────────────────────────────────────────
+.DS_Store
+**/.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.code-workspace

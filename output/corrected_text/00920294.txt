@@ -5,9 +5,8 @@ Vow: Bews rege
 Ove: FF
 dre grem Group 162 Ecipne
 Save Comteaeed
-Mentie ID: 3.064 Masihbe Description Mail Ord tady Raaponters
+Mentie 1D: 3.064 Masihbe Description Mail Ord tady Raaponters
 — Octet Newt
-—
 Querery: 773
 Maitdete SAT?
 Prope #: Toate
@@ -16,17 +15,6 @@ Toda RA
 Madde Celia
 110 bose Cabvery
 2 ewe pws
-s
-‘
-5
-‘,
-‘
-’
 10
 Notm
-z
-&.
-2
-3
 PAL Meo
-a

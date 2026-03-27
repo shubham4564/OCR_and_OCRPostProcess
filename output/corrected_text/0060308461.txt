@@ -1,5 +1,5 @@
 nm, CIGARETTE REPORT rom
-‘:
+‘ :
 (1) YEAR coventDe ens
 (2) BRIO FAUILY BAKRs LUCKY sraiKE
 (3) VARIETY DESCRIPTIONe__Low tar, bing size, filter, herd pack
@@ -7,14 +7,13 @@ nm, CIGARETTE REPORT rom
 (S) Pibrem: Xo WoNrILTene. (eheck ore!
 (6) BARD PACKX SOFT PACK: feneck one}
 7) MEwrnons 0 POSMETHOL___* leneck one)
-(8) PACK size sox 2Os
+(8) PACK size sox 20s
 (9) erames__ Vee ncorawes__O.8 9g (den. 185 Report)
 410) vanvery (war sates: 2mzer
 (11) vaniery couaR cates, 6
 (12) FIRST GALES DATE LAST GALES OATES _
 REPORTABLE EXPENDITURES
-
-(19) Cat-asmxspeseme 0 2OP
+(19) Cat-asmxspeseme 0 20P
 (14) CAT-B-Gx7FMSESs__ ie
 (13) cat-copeppnsese HD ee
 (26) Cat-p-exrnnsiss ES

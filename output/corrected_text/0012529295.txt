@@ -1,4 +1,5 @@
-: - oho: Po je
+: - oho
+: Po je
 sede FO set ena
 Ror ES ne
 eqQat ign WS
@@ -18,8 +19,7 @@ Pield Stare sgaysar © Current Bal. Avatledlar {381,583.04}
 Piald Complete 10/14/87 Tate Cheoger = 70,025, 00
 (From Curceot Bedget}
 Pinel Report Doe _11/16/8)
-Tate Amount =0-
-Actual sterit date on the) (row Kant Tears Bodget)
+Tate Amount =OActual sterit date on the) (row Kant Tears Bodget)
 Pent al Muppiaan « Teche ally voy pelence: 457, 409, og
 tom dug. to otent alt (Hed
 10 wa post intso poned )
