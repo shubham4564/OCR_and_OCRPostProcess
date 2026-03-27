@@ -309,6 +309,136 @@ def run_postprocess(
 
 
 # ---------------------------------------------------------------------------
+# Verification against LLM ground truth
+# ---------------------------------------------------------------------------
+
+def _cer(hypothesis: str, reference: str) -> float:
+    """Character Error Rate: edit-distance / len(reference)."""
+    h, r = list(hypothesis), list(reference)
+    n = len(r)
+    if n == 0:
+        return 0.0
+    # DP edit distance
+    dp = list(range(len(h) + 1))
+    for rch in r:
+        new_dp = [dp[0] + 1]
+        for j, hch in enumerate(h):
+            new_dp.append(min(dp[j] + (0 if hch == rch else 1),
+                              dp[j + 1] + 1,
+                              new_dp[-1] + 1))
+        dp = new_dp
+    return dp[len(h)] / n
+
+
+def _wer(hypothesis: str, reference: str) -> float:
+    """Word Error Rate: edit-distance on word sequences / len(reference words)."""
+    h = hypothesis.split()
+    r = reference.split()
+    n = len(r)
+    if n == 0:
+        return 0.0
+    dp = list(range(len(h) + 1))
+    for rw in r:
+        new_dp = [dp[0] + 1]
+        for j, hw in enumerate(h):
+            new_dp.append(min(dp[j] + (0 if hw == rw else 1),
+                              dp[j + 1] + 1,
+                              new_dp[-1] + 1))
+        dp = new_dp
+    return dp[len(h)] / n
+
+
+def _normalize_for_metric(text: str) -> str:
+    """Lowercase and collapse whitespace for fair comparison."""
+    return re.sub(r"\s+", " ", text.lower()).strip()
+
+
+def run_verify(
+    gt_path: Path,
+    corrected_manifest_path: Path,
+    raw_text_dir: Path,
+) -> None:
+    """Compare corrected text (and raw text) against LLM ground truth.
+
+    The ground truth JSON is a list of {"text": ...} entries whose order
+    corresponds 1-to-1 with the 10 images provided with the dataset.
+    We match them to corrected files via the corrected_manifest (sorted by
+    image_name) limited to the first 10 entries.
+    """
+    with gt_path.open(encoding="utf-8") as fh:
+        gt_entries = json.load(fh)          # list of {"text": ...}
+    gt_texts = [e["text"] for e in gt_entries]
+    n_gt = len(gt_texts)
+
+    if not corrected_manifest_path.exists():
+        raise SystemExit(
+            f"Corrected manifest not found: {corrected_manifest_path}\n"
+            "Run post_processor.py first (without --verify) to generate it."
+        )
+
+    manifest_rows = _read_csv_rows(corrected_manifest_path)
+    # Sort deterministically and take first n_gt rows to align with GT order
+    manifest_rows_sorted = sorted(manifest_rows, key=lambda r: r["image_name"])
+    paired = list(zip(gt_texts, manifest_rows_sorted[:n_gt]))
+
+    print(f"{'Image':<30} {'Raw CER':>8} {'Cor CER':>8} {'Raw WER':>8} {'Cor WER':>8}  Δ CER")
+    print("-" * 75)
+
+    summary_raw_cer, summary_cor_cer = [], []
+    summary_raw_wer, summary_cor_wer = [], []
+    results = []
+
+    for gt_text, row in paired:
+        image_name = row["image_name"]
+        raw_path = raw_text_dir / Path(row["raw_text_path"]).name
+        cor_path = Path(row["corrected_text_path"])
+
+        raw_text = _read_text(raw_path) if raw_path.exists() else ""
+        cor_text = _read_text(cor_path) if cor_path.exists() else ""
+
+        gt_norm  = _normalize_for_metric(gt_text)
+        raw_norm = _normalize_for_metric(raw_text)
+        cor_norm = _normalize_for_metric(cor_text)
+
+        raw_cer = _cer(raw_norm, gt_norm)
+        cor_cer = _cer(cor_norm, gt_norm)
+        raw_wer = _wer(raw_norm, gt_norm)
+        cor_wer = _wer(cor_norm, gt_norm)
+        delta_cer = cor_cer - raw_cer  # negative = improvement
+
+        summary_raw_cer.append(raw_cer)
+        summary_cor_cer.append(cor_cer)
+        summary_raw_wer.append(raw_wer)
+        summary_cor_wer.append(cor_wer)
+
+        arrow = "↓" if delta_cer < -0.001 else ("↑" if delta_cer > 0.001 else "=")
+        print(f"{image_name:<30} {raw_cer:>8.3f} {cor_cer:>8.3f} "
+              f"{raw_wer:>8.3f} {cor_wer:>8.3f}  {arrow}{abs(delta_cer):.3f}")
+
+        results.append({
+            "image_name": image_name,
+            "raw_cer": round(raw_cer, 4),
+            "corrected_cer": round(cor_cer, 4),
+            "raw_wer": round(raw_wer, 4),
+            "corrected_wer": round(cor_wer, 4),
+            "delta_cer": round(delta_cer, 4),
+        })
+
+    avg = lambda lst: sum(lst) / len(lst) if lst else 0.0
+    print("-" * 75)
+    print(f"{'AVERAGE':<30} {avg(summary_raw_cer):>8.3f} {avg(summary_cor_cer):>8.3f} "
+          f"{avg(summary_raw_wer):>8.3f} {avg(summary_cor_wer):>8.3f}  "
+          f"{'↓' if avg(summary_cor_cer) < avg(summary_raw_cer) else '↑'}"
+          f"{abs(avg(summary_cor_cer) - avg(summary_raw_cer)):.3f}")
+    print()
+    print(json.dumps({"per_image": results,
+                       "avg_raw_cer": round(avg(summary_raw_cer), 4),
+                       "avg_corrected_cer": round(avg(summary_cor_cer), 4),
+                       "avg_raw_wer": round(avg(summary_raw_wer), 4),
+                       "avg_corrected_wer": round(avg(summary_cor_wer), 4)}, indent=2))
+
+
+# ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
 
@@ -322,6 +452,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Path to OCR manifest CSV produced by ocr_processor.py",
     )
     parser.add_argument("--output-dir", default="output", help="Root output directory")
+    parser.add_argument(
+        "--verify",
+        metavar="GT_JSON",
+        help="Path to LLM ground truth JSON (e.g. data/llmgroundtruth/llmgroundtruth.json). "
+             "Prints CER/WER comparison for the 10 GT images instead of running correction.",
+    )
     return parser
 
 
@@ -329,27 +465,33 @@ if __name__ == "__main__":
     args = _build_parser().parse_args()
 
     output_root = Path(args.output_dir)
-    ocr_manifest_path = Path(args.ocr_manifest)
 
-    if not ocr_manifest_path.exists():
-        raise SystemExit(
-            f"OCR manifest not found: {ocr_manifest_path}\n"
-            "Run ocr_processor.py first to generate it."
+    if args.verify:
+        run_verify(
+            gt_path=Path(args.verify),
+            corrected_manifest_path=output_root / "postprocess_manifest.csv",
+            raw_text_dir=output_root / "raw_text",
         )
-
-    corrected_rows, events = run_postprocess(
-        ocr_manifest_path=ocr_manifest_path,
-        corrected_dir=output_root / "corrected_text",
-        corrected_manifest_path=output_root / "postprocess_manifest.csv",
-        edit_events_path=output_root / "edit_events.csv",
-    )
-    print(
-        json.dumps(
-            {
-                "num_documents": len(corrected_rows),
-                "num_edit_events": len(events),
-                "output_dir": str(output_root),
-            },
-            indent=2,
+    else:
+        ocr_manifest_path = Path(args.ocr_manifest)
+        if not ocr_manifest_path.exists():
+            raise SystemExit(
+                f"OCR manifest not found: {ocr_manifest_path}\n"
+                "Run ocr_processor.py first to generate it."
+            )
+        corrected_rows, events = run_postprocess(
+            ocr_manifest_path=ocr_manifest_path,
+            corrected_dir=output_root / "corrected_text",
+            corrected_manifest_path=output_root / "postprocess_manifest.csv",
+            edit_events_path=output_root / "edit_events.csv",
         )
-    )
+        print(
+            json.dumps(
+                {
+                    "num_documents": len(corrected_rows),
+                    "num_edit_events": len(events),
+                    "output_dir": str(output_root),
+                },
+                indent=2,
+            )
+        )
