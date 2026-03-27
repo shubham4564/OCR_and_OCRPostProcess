@@ -1,0 +1,17 @@
+{
+  "num_images": 149,
+  "total_events": 1054,
+  "event_types": {
+    "spacing": 550,
+    "punctuation_noise": 81,
+    "substitution": 379,
+    "deletion": 28,
+    "insertion": 16
+  },
+  "analysis_outputs": {
+    "frequency_table": "output/analysis/error_frequency_table.csv",
+    "top_confusion_pairs": "output/analysis/top_confusion_pairs.csv",
+    "confusion_matrix_json": "output/analysis/confusion_matrix.json",
+    "events_per_image": "output/analysis/events_per_image.csv"
+  }
+}

@@ -1,0 +1,66 @@
+212009596
+
+MIS PROJECT REQUEST
+PART I - CLIENT REQUEST
+
+Requested by: Karl Hutchison Project Number: (assigned by MIS)
+Department: BD & SS Date Submitted: 4/17/98
+Phone Number: 7970 Date Required: 4/20/98
+
+6. System Error
+17, Procedural Error
+
+"__ i Enhancement ~X_ 1. Productivity Improvement | __ Immediate
+= 2 Maintenance TT ax Return On Investment — | “X_ High
+TK 3. Special Processing | — 3. Customer Impact = Medium
+22 4 Ad Hoe = 4 Government Requirement |“ Low
+
+= S Emergency = 5 Business Change = Deter
+
+DEMININON] ee ee
+Description of Request:
+
+Please run job FRMRXUM2 for GPC, Misty, and Kool agains fle n:\common\khutehi\r892unm.st
+Please place output in the same directory.
+
+Reason for Request:
+
+Calculation of 1997 STR volumes for these brands for allocation of Period 2A budgets,
+
+Request Authorized By:
+Kart Aatchison
+
+DE:
+|. Productivity Improvement - time savings
+
+9. Return on Investment - dollar savings
+Customer Impact - requested change affects
+BAW's external customers
+
+Government Requirement - required by law
+Business Change - change in a business
+
+REQUEST TYPE:
+
+1, Enhancement - productivity improvement, new
+functionality, nice to have feature
+
+2, Maintenance - fix program error, new business need
+
+3. Special Processing - high volume file maintenance or
+data correction which isnot part of normal processing
+
+4, Ad Hoe - reporting requirement which is not part of
+
+‘normal processing process, or implement strategic direction
+5. Emergency - application or technology failure 6, System Error - system isnot functioning as
+designed.
+7. Procedural Error - caused by user, scheduling,
+operations etc
+REQUEST AUTHORIZED BY - MUST BE AUTHORIZED BY THE DEPARTMENT DIRECTOR OR THE
+
+DESIGNATED SYSTEM OWNER BEFORE SUBMISSION TO THE MIS CLIENT SYSTEMS MANAGER.
+
+SHAREDSTEANALY PLA MOROERDAATAEQDOC
+
+PRODUCED FROM B&W WEB SITE

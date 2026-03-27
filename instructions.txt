@@ -1,0 +1,15 @@
+OCR Assignment
+Requirements for full credit:
+	•	Python Codebase
+	•	Use an OCR library (example: Tesseract)
+	•	Document your code and make sure it runs on Ubuntu. if you are using additional libraries please include pip command to install them. Reproducibility is highly important in research.
+The main purpose of this assignment is to get you to try running OCR on either images or to run OCR Post Processing on OCR'd text (or both!). To do so you will need to find a small dataset of either images with text in them (examples: Scanned documents, photographs of signs with text) or the initial results of text that has been digitized with OCR (example: TREC-5 dataset)
+Once you have your dataset you will either run the initial OCR (image -> text), or you will run OCR Post Processing Error Detection/Correction/Verification. You can also do both, but in some scenarios you may be limited to what kind of error correction you can do. For example, if the documents are prose then you can do error detection and context-based corrections , but if they are car plates, then you cannot do much more than potentially detect errors if there are invalid or missing/extra characters in that car plate. Ultimately it is up to your dataset what you want as long as you use some of the OCR pipeline.
+Deliverables:
+	•	Python .py file(s) or jupiter notebook (either is fine)
+	•	Small concise documentation in the form of a PDF on how to run your code and what it does. Please don't write a book. Include:
+	◦	Text documentation on how to run your code and what I need to get it running (install any packages, do anything specific?) If I need to message you for help running your code then your documentation sucks.
+	◦	Short concise explanation on your dataset, what your goals were, what issues you ran into, what kind of errors you saw with the OCR'd content, and a diagram of the workflow from start to finish.
+	▪	For the errors give me a quick analysis and frequency table / confusion matrix on the type of errors you saw in OCR process.
+ 
+This is an individual project. I want to make sure everyone has their own individually and independently created codebase and no shared datasets unless you are targeting different content. You are welcomed to use GenAI (ChatGPT) to help you create the code but document what you used AI for.
